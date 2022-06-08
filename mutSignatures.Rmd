@@ -1,0 +1,141 @@
+---
+title: "MutSignatures for SpermSeq"
+author: "Laurel Hiatt"
+date: "5/27/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installing mutSignatures
+
+Install instructions from https://github.com/dami82/mutSignatures.
+
+
+```{r install}
+install.packages("systemfonts")
+library(systemfonts)
+devtools::install_github("dami82/mutSignatures", force = TRUE, build_vignettes = TRUE)
+
+```
+
+## Looking at the Package
+
+Here we go!
+
+```{r pressure, echo=FALSE}
+??mutSignatures
+??extractSignatures
+```
+
+# Making the mutCountMatrix for the above function - Option 1
+Using this link https://rdrr.io/bioc/MutationalPatterns/man/mut_matrix.html
+https://rdrr.io/bioc/MutationalPatterns/man/read_vcfs_as_granges.html
+
+I'm also going to check with Jason 
+
+``` {r making mut matrix RDS}
+## See the 'read_vcfs_as_granges()' example for how we obtained the
+## following data:
+grl <- readRDS(system.file("states/read_vcfs_as_granges_output.rds",
+  package = "MutationalPatterns"
+))
+
+## Load the corresponding reference genome.
+ref_genome <- "BSgenome.Hsapiens.UCSC.hg19"
+library(ref_genome, character.only = TRUE)
+
+## Construct a mutation matrix from the loaded VCFs in comparison to the
+## ref_genome.
+mut_mat <- mut_matrix(vcf_list = grl, ref_genome = ref_genome)
+
+## Construct a mutation matrix with a larger context.
+## This is most usefull when you have many mutations per sample.
+mut_mat_extended <- mut_matrix(vcf_list = grl, ref_genome = ref_genome, extension = 2)
+
+```
+
+# Making the mutCountMatrix for the above function - Option 2
+I got the code from Jason at /scratch/ucgd/lustre-work/quinlan/u1240855/spermseq/scripts/analysis/mutation_signatures/mutation_signatures.Rmd
+
+``` {r making mut matrix Jason }
+# in mutation_signatures.Rmd
+``` 
+
+# Making the mutCountMatrix for the above function - Option 3
+taken from https://www.bioconductor.org/packages/devel/bioc/vignettes/signeR/inst/doc/signeR-vignette.html
+
+``` {r making mut matrix signeR vignette }
+library(VariantAnnotation)
+library(data.table)
+library(signeR)
+# BSgenome, equivalent to the one used on the variant call
+# BiocManager::install("BSgenome.Hsapiens.UCSC.hg138")
+library(BSgenome.Hsapiens.UCSC.hg38)
+
+setwd('/Users/quinlan/u1264408/mutation_signatures')
+file1 <- "/Users/quinlan/u1264408/mutation_signatures/19610X1.1.custom_variants_filtered.vcf"
+file2 <- "/Users/quinlan/u1264408/mutation_signatures/19610X2.1.custom_variants_filtered.vcf"
+files <- c(file1, file2)
+vcf_data <- importVCFfiles(files)
+
+setwd('/Users/quinlan/u1264408/mutation_signatures')
+vcfobj <- readVcf(file1, "hg38")
+grch38 <- BSgenome.Hsapiens.UCSC.hg38
+mut <- genCountMatrixFromVcf(grch38, vcfobj)
+
+mut = matrix(ncol=96,nrow=0)
+for(i in files) {
+    vo = readVcf(i, "hg38")
+    # sample name (should pick up from the vcf automatically if available)
+    # colnames(vo) = i
+    m0 = genCountMatrixFromVcf(grch38, vo)
+    mut = rbind(mut, m0)
+}
+dim(mut) # matrix with all samples
+``` 
+
+
+# Making the mutCountMatrix for the above function - Option 4 WE DID IT!!!!
+
+https://rdrr.io/bioc/MutationalPatterns/man/read_vcfs_as_granges.html
+
+``` {r making mut matrix } 
+library(BSgenome.Hsapiens.UCSC.hg38)
+
+sample_names <- c(
+  "19610X1.1", "19610X2.1"
+)
+# make this list/file argument
+
+## We assemble a list of files we want to load.  These files match the
+## sample names defined above.
+vcf_files <- c("/Users/quinlan/u1264408/mutation_signatures/19610X1.1.custom_variants_filtered.vcf", "/Users/quinlan/u1264408/mutation_signatures/19610X2.1.custom_variants_filtered.vcf")
+# make this list/file argument
+
+## Get a reference genome BSgenome object.
+ref_genome <- "BSgenome.Hsapiens.UCSC.hg38"
+
+## This function loads the files as GRanges objects.
+## For backwards compatability reasons it only loads SNVs by default
+vcfs <- read_vcfs_as_granges(vcf_files, sample_names, ref_genome)
+
+## To load all variant types use:
+vcfs <- read_vcfs_as_granges(vcf_files, sample_names, ref_genome, type = "snv")
+
+## Loading only indels can be done like this.
+
+# grl <- read_vcfs_as_granges(vcf_files, sample_names, ref_genome, type = "indel")
+
+
+mut_mat <- mut_matrix(vcfs, ref_genome)
+library(MutationalPatterns)
+mut_matrix(vcf_data, ref_genome, extension = 1)
+
+write.csv(mut_mat,"/Users/quinlan/u1264408/mutation_signatures/19610testMutationCountMatrix.csv", row.names = TRUE)
+
+``` 
+
+
