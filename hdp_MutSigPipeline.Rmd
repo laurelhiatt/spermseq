@@ -1,0 +1,34 @@
+---
+title: "hdp MutSig Pipeline"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/') #wherever files are
+list.files()
+library(devtools)
+setRepositories()
+devtools::install_github("nicolaroberts/hdp", build_vignettes = FALSE)
+library(hdp)
+
+??hdp
+
+mut_count <- read.csv('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/BloodMutationCountMatrix.csv')
+
+devtools::install_github("WuyangFF95/SynSigRun", ref = "1.0.0-branch")
+```
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

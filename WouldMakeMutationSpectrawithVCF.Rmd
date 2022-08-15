@@ -1,0 +1,63 @@
+---
+title: "Quick Mutation Spectra Code"
+author: "Laurel Hiatt"
+date: '2022-06-23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Set up
+
+(base) quinlan@quinlans-mbp spermseq % head -n 1 GleesonVariants.csv > GleesonSpermVariants.csv
+(base) quinlan@quinlans-mbp spermseq % grep sperm GleesonVariants.csv >> GleesonSpermVariants.csv
+
+```{r set up}
+#devtools::install_github("gersteinlab/siglasso")
+# devtools::install_github("larssnip/microseq")
+library(microseq)
+library(siglasso)
+library(BSgenome.Hsapiens.UCSC.hg19)
+setwd('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/spermseq')
+
+#BiocManager::install("BSgenome.Hsapiens.UCSC.hg19")
+
+
+ref_genome <- readFasta('/Users/quinlan/u1264408/human_g1k_v37_decoy_phix.fasta')
+
+# ref_genome <- 'BSgenome.Hsapiens.UCSC.hg19'
+output_file <- "MutSpectra"
+
+data <- read.csv('GleesonSpermVariants.csv')
+
+keeps <- c("CHROM","POS", "REF", "ALT")
+df = data[keeps]
+write.table(df, "GleesonSpermVariants.vcf", row.names = FALSE, sep = '\t', quote = FALSE)
+
+vcf_meta <- "file_location.csv"
+
+my_spectrum <- vcf2spec(
+  bedtools_path = "bedtools",
+  vcf_meta,
+  '/Users/quinlan/u1264408/human_g1k_v37_decoy_phix.fasta',
+  output_file,
+  context_length = 1,
+  overwrite = T
+)
+
+
+
+```
+
+## The Code
+
+It's code
+
+```{r code}
+
+list.files()
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
