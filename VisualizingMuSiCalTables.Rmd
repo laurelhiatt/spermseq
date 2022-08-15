@@ -1,0 +1,111 @@
+---
+title: "20220715 Mutational Signature Visualization"
+author: "Laurel Hiatt"
+date: '2022-07-15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/spermseq')
+
+root.dir('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/spermseq') #wherever files are
+list.files()
+bloodH_S <- read.csv('2022-08-03_blood_clean_H_S.csv')
+spermH_S <- read.csv('2022-08-02_sperm_clean_H_S.csv')
+
+```
+
+## R Markdown
+Let's get ready to map proportions 
+```{r summarize cols and get percentage}
+
+# install.packages('janitor')
+library(janitor)
+
+bloodH_Sperc <- bloodH_S %>%
+  adorn_percentages("col")
+
+spermH_Sperc <- spermH_S %>%
+  adorn_percentages("col")
+
+
+### can make sure everything adds up to 1 with
+
+# library(tidyverse)
+# library("purrr")
+#bloodH_Sperc %>%
+#     select_if(is.numeric) %>%
+#     map_dbl(sum)
+
+#spermH_Sperc %>%
+#     select_if(is.numeric) %>%
+#     map_dbl(sum)
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r plot, echo=FALSE}
+library(ggplot2)
+# prepare the matrix for barplot
+# note that we exclude the 3rd column and we transpose the data
+
+bloodswitched <- t(as.data.frame(bloodH_Sperc[-1]))
+colnames(bloodswitched) <- bloodH_Sperc$X
+
+spermswitched <- t(as.data.frame(spermH_Sperc[-1]))
+colnames(spermswitched) <- spermH_Sperc$X
+
+#install.packages("reshape2")
+library(reshape2)
+meltblood <- melt(bloodswitched)
+meltsperm <- melt(spermswitched)
+
+#install.packages("ggforce")
+library(ggforce)
+library(cowplot)
+
+### individual plots
+ggplot(meltsperm, aes(Var2, value,  fill = Var2)) + 
+  facet_wrap(~ Var1, scales = 'free') + geom_bar(stat="identity", show_guide=FALSE)  + 
+  theme_cowplot(12) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        legend.box.background = element_rect(fill='#fffafa'),
+                            legend.background = element_blank()) + 
+  xlab('Sperm Signatures') + ylab('Proportion')
+
+
+ggplot(meltblood, aes(Var2, value,  fill = Var2)) + 
+  facet_wrap(~ Var1, scales = 'free') + geom_bar(stat="identity", show_guide=FALSE)  + 
+  theme_cowplot(12) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        legend.box.background = element_rect(fill='#fffafa'),
+        legend.background = element_blank()) + 
+  xlab('Blood Signatures') + ylab('Proportion')
+
+
+### Overall Signatures
+ggplot(meltblood, aes(Var2, value,  fill = Var2)) + 
+  geom_bar(stat="identity", show_guide=FALSE)  + 
+  theme_cowplot(12) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        legend.box.background = element_rect(fill='#fffafa'),
+        legend.background = element_blank()) + 
+  xlab('Blood Signatures') + ylab('Proportion')
+
+
+ggplot(meltsperm, aes(Var2, value,  fill = Var2)) + 
+  geom_bar(stat="identity", show_guide=FALSE)  + 
+  theme_cowplot(12) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        legend.box.background = element_rect(fill='#fffafa'),
+        legend.background = element_blank()) + 
+  xlab('Sperm Signatures') + ylab('Proportion')
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
