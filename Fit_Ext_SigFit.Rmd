@@ -1,0 +1,104 @@
+---
+title: "Fit_Ext Project"
+author: "Laurel Hiatt"
+date: "2022-09-30"
+output: html_document
+---
+## Setup
+First, let's get the different libraries we're going to use.
+```{r setup, results='hide', message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(sigfit)
+library(ggplot2)
+library(data.table)
+library(dplyr)
+
+```
+
+## Get Our Data Usable 
+
+sigfit is a bit annoying and requires specific bullshit to run (like a specific order for the nucleotide contexts and a particular arrangement of the matrix so)
+
+### For ceph
+```{r ceph}
+secondceph <- read.csv('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/spermseq/Ceph2ndGenTriCollapsedPaternal.csv', header = FALSE, sep = ' ')
+# these are the mutation counts for paternal DNNMs in the second generation, collapsed to 96 trinucleotide contexts that match sigfit's requirements
+
+#thirdceph <- read.csv('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/spermseq/Ceph3rdGenTriCollapsedPaternal.csv', header = FALSE, sep = ' ')
+# here is the third generation if desired for comparable analysis
+
+data("cosmic_signatures_v3.2")
+# here is what we're going to base our sigfit order stuff off of
+cosmicswitched <- as.data.frame(t(as.data.frame(cosmic_signatures_v3.2)))
+#let's get it into a dataframe for the next part with switched rows/columns
+cosmicswitched <- setDT(cosmicswitched, keep.rownames = TRUE)[]
+#I want the row names to be a row to match by
+
+cosmicswitched <- cosmicswitched[,1:2]
+# let's clean it up
+cosmicswitched$id  <- 1:nrow(cosmicswitched)
+# I need to code in the order for later
+colnames(secondceph)[2] <- "rn"
+# matching column names to merge
+
+merged <- merge(cosmicswitched,secondceph, by = "rn")
+merged <- merged[order(merged$id), ]
+#I've merged and ordered by the order column, so stuff is where it should be
+
+secondceph <- merged[, c("V1", "rn")]
+# I update my secondceph df to be in the right order
+
+### now for some final touches
+secondcephswitched <- t(as.data.frame(secondceph[,1]))
+
+secondcephswitched<- secondcephswitched/rowSums(secondcephswitched)
+colnames(secondcephswitched) <- secondceph$rn
+
+# this should now be in the right row vs column matrix, with proportions, named,
+# and in the right order 
+
+```
+
+### For sperm
+This one isn't so bad.
+```{r sperm}
+sperm_count <- read.csv('/Users/quinlan/Documents/Quinlan-PhD/SpermSeq/spermseq/SpermMutationCountMatrix.csv')
+spermswitched <- t(as.data.frame(sperm_count[-1]))
+colnames(spermswitched) <- colnames(cosmic_signatures_v3.2)
+
+```
+
+### Quick tangent
+```{r plot}
+#we can take a look at the sasani data we're putting in as a signature like this
+par(mar=c(5,6,6.5,1))
+plot_spectrum(secondcephswitched)
+
+```
+
+## Okay, let's do the actual analysis
+```{r analysis}
+mcmc_samples_fit <- fit_extract_signatures(
+  counts=spermswitched, #mutation counts from our data set
+  signatures=secondcephswitched, #our signature we're putting in from Sasani
+  num_extra_sigs = 1, #getting one additional signature
+  iter=50000,
+  warmup=25000,
+  chains=1,
+  # doesn't recommend multiple chains for this
+  seed=1896)
+
+```
+
+## We can look at the signatures A (Sasani) and B (New)
+```{r signatures}
+par(mar = c(5,6,7,2))
+extr_sigs <- retrieve_pars(mcmc_samples_fit, "signatures")
+plot_spectrum(extr_sigs)
+```
+
+## We can look at exposures of the samples for these two signatures
+```{r exposures}
+par(mar=c(8,5,3.5,0))
+plot_exposures(mcmc_samples = mcmc_samples_fit)
+```
